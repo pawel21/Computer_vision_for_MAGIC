@@ -85,7 +85,7 @@ def get_coords(state, indices, m_points):
     ]
     return x_coords, y_coords
 
-def get_matrix_points(crossing_points_path='../data/crossings_points.pkl'):
+def get_matrix_points(crossing_points_path='data/crossings_points.pkl'):
     with open(crossing_points_path, 'rb') as f:
         crossing_points = pickle.load(f)
 
@@ -100,3 +100,32 @@ def get_matrix_points(crossing_points_path='../data/crossings_points.pkl'):
             j = 0
             i += 1
     return m_points
+
+def show_mirror(path, idx):
+    m_points = get_matrix_points()            
+    rows, cols = m_points.shape
+    indices = [(i, j) for i in range(rows - 1) for j in range(cols - 1)]
+    N = len(indices)
+    state = {'idx': idx}
+    
+    i, j = indices[state['idx']]
+
+    x_coords, y_coords = get_coords(state, indices, m_points)
+
+    img_np = np.array(Image.open(path).convert('RGB'))
+    cropped = extract_polygon_region_cv2(path, x_coords, y_coords)
+
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
+    ax1.imshow(img_np)
+    ax1.plot(x_coords, y_coords, 'r-', lw=2)
+    ax1.scatter(x_coords[:-1], y_coords[:-1], c='cyan', s=30)
+    ax1.set_title(f"Mirror ({i}, {j})")
+    ax1.axis('off')
+
+    ax2.imshow(cropped)
+    ax2.set_title("Cropped Region")
+    ax2.axis('off')
+
+    plt.tight_layout()
+    plt.show()
