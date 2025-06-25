@@ -129,3 +129,25 @@ def show_mirror(path, idx):
 
     plt.tight_layout()
     plt.show()
+
+def add_box_around_mirror(img_np, list_idx):
+    m_points = get_matrix_points()            
+    rows, cols = m_points.shape
+    indices = [(i, j) for i in range(rows - 1) for j in range(cols - 1)]
+    N = len(indices)
+    
+    fig, ax1 = plt.subplots(1, 1, figsize=(10,5))
+    ax1.imshow(img_np)
+    for idx in list_idx:
+        state = {'idx': idx}
+        i, j = indices[state['idx']]
+        x_coords, y_coords = get_coords(state, indices, m_points)
+        ax1.plot(x_coords, y_coords, 'r-', lw=0.5)
+        ax1.scatter(x_coords[:-1], y_coords[:-1], c='cyan', s=10)
+    
+    ax1.axis('off')
+
+
+    plt.tight_layout()
+    plt.show()
+    
