@@ -3,10 +3,6 @@ from skimage.feature import hog
 from sklearn.decomposition import PCA
 from skimage.feature import local_binary_pattern
 
-from tensorflow.keras.applications import MobileNetV2
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-from tensorflow.keras.preprocessing.image import img_to_array
-import cv2
 
 def raw_pixels(image):
     return image.flatten() / 255.0
@@ -23,10 +19,13 @@ def pca_features(images, n_components=10):
     flat = [img.flatten() / 255.0 for img in images]
     return PCA(n_components=n_components).fit_transform(flat)
 
-mobilenet = MobileNetV2(include_top=False, input_shape=(64, 64, 3), pooling='avg')
+def statistical_features(img):
+    return np.array([
+        np.mean(img),
+        np.std(img),
+        np.min(img),
+        np.max(img),
+        np.percentile(img, 25),
+        np.percentile(img, 75),
+    ])
 
-def cnn_features(image):
-    resized = cv2.resize(image, (64, 64))
-    rgb = np.repeat(resized[:, :, np.newaxis], 3, axis=2)
-    x = preprocess_input(img_to_array(rgb))
-    return mobilenet.predict(x[np.newaxis])[0]
