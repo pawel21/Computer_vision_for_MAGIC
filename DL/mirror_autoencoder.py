@@ -10,26 +10,30 @@ class MirrorAutoencoder(nn.Module):
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 8, kernel_size=3, padding=1),   # (1, 18, 16) -> (8,18,16)
             nn.ReLU(),
-            nn.MaxPool2d(2, stride=2, padding=1)         # -> (8,9,8)
+            nn.MaxPool2d(2, stride=2, padding=1),         # -> (8,9,8)
             nn.Conv2d(8, 4, kernel_size=3, padding=1),   # -> (4,9,8)
             nn.ReLU(),
-            nn.MaxPoll2d(2, stride=2, padding=1)         # -> (4, 5, 4)
+            nn.MaxPool2d(2, stride=2, padding=1)         # -> (4, 5, 4)
 
         )
 
         # Decoder
         self.decoder = nn.Sequential(
-            nn.Conv2d(4, 4, kernel_size=3, padding=1)    # (4,5,4)
+            nn.Conv2d(4, 4, kernel_size=3, padding=1),    # (4,5,4)
             nn.ReLU(),
-            nn.Upsample(scale_factor=2, mode="nearest")  # (4,10,8)
-            nn.Conv2d(4, 8, kernel_size=3, padding=1)    # (8,10,8)
+            nn.Upsample(scale_factor=2, mode="nearest"),  # (4,10,8)
+            nn.Conv2d(4, 8, kernel_size=3, padding=1),    # (8,10,8)
             nn.ReLU(),
-            nn.Upsample(scale_factor=2, mode="nearest")  # (8, 20, 16)
-            nn.Conv2d(8, 1, kernel_size=3, padding=1)    # (1, 20, 10)
+            nn.Upsample(scale_factor=2, mode="nearest"),  # (8, 20, 16)
+            nn.Conv2d(8, 1, kernel_size=3, padding=1),    # (1, 20, 10)
             nn.Sigmoid()
         )
 
     def forward(self, x):
         encoded = self.encoder(x)
-        decoded = self.decoder(x)
+        decoded = self.decoder(encoded)
+
+        H = x.shape[2]
+        W = x.shape[3]
+        decoded = decoded[:, :, :H, :W]
         return decoded
