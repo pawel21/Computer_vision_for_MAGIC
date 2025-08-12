@@ -22,7 +22,7 @@ def get_coords(state, indices, m_points):
     ]
     return x_coords, y_coords
 
-def get_matrix_points(crossing_points_path='/media/pgliwny/ADATA HD330/Computer_Vision_system/data/crossings_points.pkl'):
+def get_matrix_points(crossing_points_path='crossings_points.pkl'):
     with open(crossing_points_path, 'rb') as f:
         crossing_points = pickle.load(f)
 
