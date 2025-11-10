@@ -86,7 +86,7 @@ class MirrorExtractor:
     def get_all_mirrors(img_array):
         mirror_list = []
         for i in range(289):
-            x_coords, y_coords = extractor.get_coords(288)
+            x_coords, y_coords = extractor.get_coords(i)
             cropped = extractor.extract_polygon_region_cv2(img_array, x_coords, y_coords)
             mirror_list.append(cropped)
         return mirror_list
