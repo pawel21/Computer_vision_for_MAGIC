@@ -1,6 +1,6 @@
 import gradio as gr
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 
@@ -18,6 +18,16 @@ class ImageBrowser:
         if not self.images:
             return None, "Brak"
         img = Image.open(self.images[self.current])
+
+        draw = ImageDraw.Draw(img) # tool to draw
+
+        draw.rectangle(
+            [(200,300), (300,400)],
+            outline="red",
+            width=30
+        )
+        points = [(245, 85), (315, 76), (312, 156), (241, 165), (245, 85)]
+        draw.polygon(points, outline="red", width=10)
         info = f"{self.current + 1} / {len(self.images)}"
         return img, info
 
