@@ -3,7 +3,6 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 
-
 class ImageBrowser:
     def __init__(self):
         self.images = []
