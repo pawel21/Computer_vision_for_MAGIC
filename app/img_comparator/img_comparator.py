@@ -7,7 +7,12 @@ import matplotlib.patches as patches
 import numpy as np
 import os
 
-from MirrorFeatureExtractor.comparator import get_diff_all_features, get_texture_feat, find_outlier_mirrors
+from MirrorFeatureExtractor.comparator import (
+    get_diff_all_features,
+    get_texture_feat,
+    find_outlier_mirrors,
+    get_outlier_mirrors_report
+ )
 from MirrorFeatureExtractor.tools import extract_polygon_region_cv2
 
 BASE_DIR = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/"
@@ -40,14 +45,15 @@ def compare_images(img1, img2):
     mirror_img_list_1 = get_mirrors_img_list(arr1)
     mirror_img_list_2 = get_mirrors_img_list(arr2)
     output_diff = get_diff_all_features(mirror_img_list_1, mirror_img_list_2)
-    o = find_outlier_mirrors(output_diff, n_top=10)
+    text_out = get_outlier_mirrors_report(output_diff, n_top=5)
 
-    mirror_list = []
-    for i in range(0, 10):
-        mirror_list.append(o[i]['mirror_idx'])
+    distances = [fd['distance'] for fd in output_diff]
+
+    mirror_list = list(np.where(np.array(distances) > (np.mean(distances) + 2*np.std(distances)))[0])
+    print(mirror_list)
 
     # Stwórz wykres z trzema panelami
-    fig, axes = plt.subplots(1, 2, figsize=(12, 7))
+    fig1, axes = plt.subplots(1, 2, figsize=(12, 7))
 
     # Panel 1: Pierwszy obraz z punktami
     axes[0].imshow(arr1)
@@ -80,7 +86,20 @@ def compare_images(img1, img2):
 
     plt.tight_layout()
 
-    return fig
+    fig2, ax = plt.subplots(1, 1, figsize=(7, 7))
+
+    distances = [fd['distance'] for fd in output_diff]
+    mirror_ids = [fd['mirror_idx'] for fd in output_diff]
+
+    ax.bar(mirror_ids, distances)
+    ax.axhline(np.mean(distances) + 2 * np.std(distances), color='r',
+                linestyle='--', label='Mean + 2σ')
+    ax.set_xlabel('Mirror ID')
+    ax.set_ylabel('Distance (normalized)')
+    ax.set_title('Odległość cech tekstury między zdjęciami A i B')
+    plt.legend()
+
+    return fig1, fig2, text_out
 
 with gr.Blocks(title="Image comparision") as demo:
     gr.Markdown("# MAGIC image comparator")
@@ -91,11 +110,13 @@ with gr.Blocks(title="Image comparision") as demo:
     compare_btn = gr.Button("Compare", variant="primary", size="lg")
 
     output_plot = gr.Plot(label="result")
+    output_plot_2 = gr.Plot(label="result 2")
+    textbox = gr.Textbox(label="Raport", lines=15)
 
     compare_btn.click(
         fn=compare_images,
         inputs=[input1, input2],
-        outputs=output_plot
+        outputs=[output_plot, output_plot_2, textbox]
     )
 
 if __name__ == '__main__':

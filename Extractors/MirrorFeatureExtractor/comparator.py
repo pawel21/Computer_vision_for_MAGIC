@@ -77,7 +77,7 @@ def find_outlier_mirrors(feature_diffs, n_top=5):
     """Znajdź lustra najbardziej odstające."""
     # Sortuj po odległości malejąco
     sorted_mirrors = sorted(feature_diffs, key=lambda x: x['distance'], reverse=True)
-
+    text = ""
     print("=== Lustra najbardziej odstające ===")
     for i, mirror in enumerate(sorted_mirrors[:n_top]):
         print(f"\n#{ i +1} Lustro {mirror['mirror_idx']}: distance = {mirror['distance']:.4f}")
@@ -90,3 +90,20 @@ def find_outlier_mirrors(feature_diffs, n_top=5):
             print(f"   - {mirror['feature_names'][idx]}: {diff[idx]:.4f}")
 
     return sorted_mirrors
+
+def get_outlier_mirrors_report(feature_diffs, n_top=5):
+    """Znajdź lustra najbardziej odstające."""
+    # Sortuj po odległości malejąco
+    sorted_mirrors = sorted(feature_diffs, key=lambda x: x['distance'], reverse=True)
+
+    text = "=== Lustra najbardziej odstające ==="
+    for i, mirror in enumerate(sorted_mirrors[:n_top]):
+        text += f"\n#{ i +1} Lustro {mirror['mirror_idx']}: distance = {mirror['distance']:.4f}"
+
+        # Pokaż które cechy najbardziej się różnią
+        diff = np.abs(mirror['diff_vector'])
+        top_feat_idx = np.argsort(diff)[::-1][:3]
+        text += "   Największe różnice w cechach:"
+        for idx in top_feat_idx:
+            text += f"   - {mirror['feature_names'][idx]}: {diff[idx]:.4f}"
+    return text
