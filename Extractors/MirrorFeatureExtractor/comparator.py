@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
+from skimage.feature import local_binary_pattern, graycomatrix, graycoprops
+
 from MirrorFeatureExtractor.mirror_feature_extractor import MirrorFeatureExtractor
 
 
@@ -34,9 +36,10 @@ def get_diff_all_features(mirrors_list_1, mirrors_list_2):
     feature_diffs = []
 
     for mirror_idx, (img_a, img_b) in enumerate(zip(mirrors_list_1, mirrors_list_2)):
-        f_a = get_texture_feat(img_a)
-        f_b = get_texture_feat(img_b)
-
+        #f_a = get_texture_feat(img_a)
+        #f_b = get_texture_feat(img_b)
+        f_a = extract_texture_features(img_a)
+        f_b = extract_texture_features(img_b)
         # Zamień słowniki na wektory
         vec_a = np.array(list(f_a.values()))
         vec_b = np.array(list(f_b.values()))
@@ -70,6 +73,12 @@ def get_texture_feat(gray_img):
     feat_extractor = MirrorFeatureExtractor()
     gray_norm = cv2.normalize(gray_img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
     feat_dict = feat_extractor.extract_texture_features(gray_norm)
+    return feat_dict
+
+def get_edge_and_gradient_feat(gray_img):
+    feat_extractor = MirrorFeatureExtractor()
+    gray_norm = cv2.normalize(gray_img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    feat_dict = feat_extractor.extract_edge_and_gradient_features(gray_norm)
     return feat_dict
 
 
@@ -107,3 +116,43 @@ def get_outlier_mirrors_report(feature_diffs, n_top=5):
         for idx in top_feat_idx:
             text += f"   - {mirror['feature_names'][idx]}: {diff[idx]:.4f}"
     return text
+
+
+def extract_texture_features(gray_img):
+    features = {}
+
+    # LBP - multi-scale
+    for R in [1, 2, 3]:
+        P = 8 * R
+        lbp = local_binary_pattern(gray_img, P=P, R=R, method='uniform')
+        n_bins = P + 2
+        hist, _ = np.histogram(lbp, bins=n_bins, range=(0, n_bins), density=True)
+        features[f'lbp_R{R}_mean'] = np.mean(lbp)
+        features[f'lbp_R{R}_std'] = np.std(lbp)
+        features[f'lbp_R{R}_entropy'] = -np.sum(hist * np.log2(hist + 1e-10))
+
+    # GLCM - multiple angles, averaged
+    angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
+    distances = [1, 3]
+    glcm = graycomatrix(gray_img.astype(np.uint8),
+                        distances=distances, angles=angles, levels=256)
+    for prop in ['contrast', 'dissimilarity', 'homogeneity',
+                 'energy', 'correlation']:
+        vals = graycoprops(glcm, prop)
+        features[f'glcm_{prop}_mean'] = np.mean(vals)
+        features[f'glcm_{prop}_std'] = np.std(vals)
+
+    # Edge features
+    sobel_x = cv2.Sobel(gray_img, cv2.CV_64F, 1, 0, ksize=3)
+    sobel_y = cv2.Sobel(gray_img, cv2.CV_64F, 0, 1, ksize=3)
+    gradient_mag = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
+    features['edge_mean'] = np.mean(gradient_mag)
+    features['edge_std'] = np.std(gradient_mag)
+    edges = cv2.Canny(gray_img, 50, 150)
+    features['edge_density'] = np.sum(edges > 0) / edges.size
+
+    # Basic intensity stats
+    features['intensity_mean'] = np.mean(gray_img)
+    features['intensity_std'] = np.std(gray_img)
+
+    return features

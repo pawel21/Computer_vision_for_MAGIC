@@ -62,7 +62,7 @@ class MirrorFeatureExtractor:
         return features
 
     @staticmethod
-    def extract_edge_features(gray_img):
+    def extract_edge_and_gradient_features(gray_img):
         """Extract edge and gradient features"""
         features = {}
 
