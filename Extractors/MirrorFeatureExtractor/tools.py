@@ -165,3 +165,6 @@ def compute_advanced_features(mirror_list):
         features_list.append(feat)
     
     return features_list
+
+def get_sharpness(mirror_img):
+    gray = cv2.cvtColor(mirror_img, cv2.COLOR_BGR2GRAY)
