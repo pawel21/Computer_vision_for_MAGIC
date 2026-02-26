@@ -47,4 +47,8 @@ with gr.Blocks() as demo:
     load_btn.click(browser.load, inputs=folder, outputs=[img, info])
     next_btn.click(browser.next, outputs=[img, info])
 
+with demo.route("Mirror segmentation", "mirror"):
+    input1 = gr.Image(type="filepath", label="img 1", height=600)
+    textbox = gr.Textbox(label="Raport", lines=15)
+
 demo.launch()
