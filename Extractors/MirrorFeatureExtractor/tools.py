@@ -3,6 +3,9 @@ from skimage import feature
 from scipy.stats import skew, kurtosis
 from sklearn.feature_selection import mutual_info_classif, SelectKBest
 from sklearn.decomposition import PCA
+from scipy.stats import entropy
+from skimage.filters import sobel
+from skimage.feature import local_binary_pattern, graycomatrix, graycoprops
 import numpy as np
 
 def extract_polygon_region_cv2(img_array, pts):
@@ -168,3 +171,40 @@ def compute_advanced_features(mirror_list):
 
 def get_sharpness(mirror_img):
     gray = cv2.cvtColor(mirror_img, cv2.COLOR_BGR2GRAY)
+
+
+def degradation_features(gray):
+    """Cechy do śledzenia degradacji lustra w czasie"""
+    # Normalizacja - niezależność od jasności
+    gray_norm = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+    # 1. Entropia - wzrost = więcej "chaosu"/defektów
+    hist = np.histogram(gray_norm, bins=256, range=(0, 256), density=True)[0]
+    texture_entropy = entropy(hist + 1e-10)
+
+    # 2. Statystyki gradientów - wykrywają zadrapania/plamy
+    grad = sobel(gray_norm.astype(float))
+    grad_mean = np.mean(grad)
+    grad_std = np.std(grad)
+
+    # 3. GLCM - homogeniczność i korelacja
+    glcm = graycomatrix(gray_norm, [1, 3], [0, np.pi / 4, np.pi / 2],
+                        256, symmetric=True, normed=True)
+    homogeneity = graycoprops(glcm, 'homogeneity').mean()
+    correlation = graycoprops(glcm, 'correlation').mean()
+    contrast = graycoprops(glcm, 'contrast').mean()
+
+    # 4. LBP uniformity - spadek = więcej nieregularnych wzorców
+    lbp = local_binary_pattern(gray_norm, 8, 1, method='uniform')
+    lbp_hist, _ = np.histogram(lbp, bins=10, density=True)
+    lbp_uniformity = np.max(lbp_hist)  # dominacja jednego wzorca = jednorodność
+
+    return {
+        'entropy': texture_entropy,  # ↑ = degradacja
+        'grad_mean': grad_mean,  # ↑ = więcej krawędzi/defektów
+        'grad_std': grad_std,  # ↑ = więcej defektów
+        'homogeneity': homogeneity,  # ↓ = degradacja
+        'correlation': correlation,  # ↓ = degradacja
+        'contrast': contrast,  # ↑ = degradacja
+        'lbp_uniformity': lbp_uniformity  # ↓ = degradacja
+    }
