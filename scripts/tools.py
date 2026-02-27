@@ -80,10 +80,11 @@ def extract_features(img):
         # General bright + saturated (any color)
         bright_saturated = (val > 200) & (sat > 80) & (mask > 0)
         features['bright_saturated_frac'] = np.sum(bright_saturated) / np.sum(mask > 0)
+        return features
     except Exception as e:
         print(e)
 
-    return features
+
 
 
 def get_warm_bright_ratio(image):

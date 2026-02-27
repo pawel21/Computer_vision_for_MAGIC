@@ -24,6 +24,7 @@ grid_dict["row 17"] = list(range(276, 285)) # [276, 277, ..., 284]
 
 if __name__ == '__main__':
     BASE_DIR = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/"
+    BASE_DIR = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/"
 
     path_to_grid = os.path.join(BASE_DIR, "data/crossings_points_IRCamM1T20250702_161000M.pkl")
     output_path = os.path.join(BASE_DIR, "data/points_IRCam.json")
