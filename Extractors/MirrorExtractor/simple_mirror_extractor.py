@@ -108,4 +108,26 @@ class SimpleMirrorExtractor:
 
         return rgb_to_gray(cropped)
 
+    def extract_mirror_gray(self, img_gray: np.ndarray, mirror_id: int) -> np.ndarray:
+        """Extract mirror patch from a pre-converted grayscale image.
+
+        Args:
+            img_gray: Grayscale image of shape (H, W) as uint8.
+            mirror_id: Integer mirror identifier.
+
+        Returns:
+            Cropped grayscale patch (H', W') as uint8.
+        """
+        if img_gray.ndim != 2:
+            raise ValueError(f"Expected grayscale (H, W), got shape {img_gray.shape}")
+
+        points = self.get_point_coords(mirror_id)
+        pts = np.array(points, dtype=np.int32).reshape((-1, 1, 2))
+
+        mask = self._build_mask(img_gray.shape, pts)
+        masked_img = cv2.bitwise_and(img_gray, img_gray, mask=mask)
+
+        x, y, w, h = cv2.boundingRect(pts)
+        return masked_img[y: y + h, x: x + w]
+
 
