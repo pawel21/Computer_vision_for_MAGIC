@@ -32,6 +32,18 @@ class MirrorFeatureExtractor:
         features['brightness_range'] = np.max(mirror_img) - np.min(mirror_img)
         return features
 
+    def extract_lpb_features(self, gray_img):
+        """Extract LPB features"""
+        features = {}
+
+        # Local Binary Pattern (LBP) - chwyta lokalne textury
+        lbp = local_binary_pattern(gray_img, P=8, R=1, method='uniform')
+        features['lbp_mean'] = np.mean(lbp)
+        features['lbp_std'] = np.std(lbp)
+
+        # Entropy tekstury
+        hist, _ = np.histogram(lbp, bins=59, range=(0, 59), density=True)
+        features['lbp_entropy'] = -np.sum(hist * np.log2(hist + 1e-10))
 
     @staticmethod
     def extract_texture_features(gray_img):
@@ -40,8 +52,6 @@ class MirrorFeatureExtractor:
 
         # Local Binary Pattern (LBP) - chwyta lokalne textury
         lbp = local_binary_pattern(gray_img, P=8, R=1, method='uniform')
-        features['lbp_mean'] = np.mean(lbp)
-        features['lbp_std'] = np.std(lbp)
 
         # Entropy tekstury
         hist, _ = np.histogram(lbp, bins=59, range=(0, 59), density=True)
