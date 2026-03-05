@@ -82,7 +82,6 @@ class MirrorFeatureExtractor:
         sobel_magnitude = np.sqrt(sobelx ** 2 + sobely ** 2)
 
         features['sobel_mean'] = np.mean(sobel_magnitude)
-        features['sobel_std'] = np.std(sobel_magnitude)
         features['sobel_max'] = np.max(sobel_magnitude)
 
         # Laplacian - dla detekcji zmian drugiego rzędu
