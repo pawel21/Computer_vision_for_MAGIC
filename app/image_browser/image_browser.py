@@ -45,8 +45,9 @@ class ImageBrowser:
         return self.show()
 
 BASE_DIR = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/"
+BASE_DIR = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/"
 mirror_points_path = os.path.join(BASE_DIR, "data/points_IRCam.json")
-img_path = os.path.join(BASE_DIR, "data/data/2025/12/15/IRCamM1T20251215_122547M.jpg")
+#img_path = os.path.join(BASE_DIR, "data/data/2025/12/15/IRCamM1T20251215_122547M.jpg")
 
 with open(mirror_points_path, 'r') as f:
     data = json.load(f)
