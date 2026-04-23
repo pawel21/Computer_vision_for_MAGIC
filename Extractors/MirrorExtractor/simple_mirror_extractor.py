@@ -106,7 +106,7 @@ class SimpleMirrorExtractor:
         x, y, w, h = cv2.boundingRect(pts)
         cropped = masked_img[y : y + h, x : x + w]
 
-        return rgb_to_gray(cropped)
+        return cropped
 
     def extract_mirror_gray(self, img_gray: np.ndarray, mirror_id: int) -> np.ndarray:
         """Extract mirror patch from a pre-converted grayscale image.
