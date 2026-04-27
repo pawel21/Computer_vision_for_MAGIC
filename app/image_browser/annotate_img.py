@@ -9,41 +9,6 @@ import matplotlib.patches as patches
 import os
 import json
 
-
-
-class ImageBrowser:
-    def __init__(self):
-        self.images = []
-        self.current = 0
-
-    def load(self, folder):
-        self.images = sorted(Path(folder).rglob("*.jpg"))
-        self.current = 0
-        return self.show()
-
-
-    def show(self):
-        if not self.images:
-            return None, "Brak"
-        img = Image.open(self.images[self.current])
-
-        draw = ImageDraw.Draw(img) # tool to draw
-
-        draw.rectangle(
-            [(200,300), (300,400)],
-            outline="red",
-            width=30
-        )
-        points = [(245, 85), (315, 76), (312, 156), (241, 165), (245, 85)]
-        draw.polygon(points, outline="red", width=10)
-        info = f"{self.current + 1} / {len(self.images)}"
-        return img, info
-
-    def next(self):
-        if self.current < len(self.images) - 1:
-            self.current += 1
-        return self.show()
-
 BASE_DIR = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/"
 # BASE_DIR = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/"
 mirror_points_path = os.path.join(BASE_DIR, "data/points_IRCam.json")
@@ -81,32 +46,30 @@ def mark_mirror_on_img(img_path, input_text):
     plt.tight_layout()
     return fig
 
-browser = ImageBrowser()
+def load_calib_file(calib_file):
+    if calib_file is None:
+        return None, "Nie wczytano pliku"
+    with open(calib_file, "r") as f:
+        calib_data = json.load(f)
+    return calib_data, f"✅ Wczytano plik: {len(calib_data)} kluczy"
 
 with gr.Blocks() as demo:
-    folder = gr.Textbox(value=".")
-    load_btn = gr.Button("Load") # ../../data/data/2025/06/27/
-    img = gr.Image(height=800, width=800)
-    info = gr.Textbox()
-    next_btn = gr.Button("Next Image")
-
-    load_btn.click(browser.load, inputs=folder, outputs=[img, info])
-    next_btn.click(browser.next, outputs=[img, info])
-
-with demo.route("Mirror segmentation", "mirror"):
+    calib_state = gr.State(None) # tutaj trzymamy dane kalibracyjne
     with gr.Row():
         input_img = gr.Image(type="filepath", label="img 1", height=500)
         output_plot = gr.Plot(label="Img")
-    calib_file = gr.File(
-        label="Calib file JSON",
-        file_types=[".json"],
-        file_count="single"
+    with gr.Row():
+        calib_file = gr.File(label="Calib file JSON", file_types=[".json"])
+        calib_status = gr.Textbox(label="Calib status", interactive=False)
+    calib_file.change(
+        load_calib_file,
+        inputs=[calib_file],
+        outputs=[calib_state, calib_status]
     )
     input_mirror_ids = gr.Textbox()
     show_btn = gr.Button("show")
     textbox = gr.Textbox(label="Raport", lines=15)
     print(input_img)
     show_btn.click(mark_mirror_on_img, inputs=[input_img, input_mirror_ids], outputs=[output_plot])
-
 
 demo.launch()
