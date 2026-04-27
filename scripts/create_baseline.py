@@ -94,7 +94,7 @@ def build_feature_matrix(
     n_images = len(image_paths)
 
     feature_matrix = np.full((n_images, n_mirrors, n_features), np.nan, dtype=np.float32)
-    valid_mask = np.zeros((n_images, n_mirrors), dtype=np.bool)
+    valid_mask = np.zeros((n_images, n_mirrors), dtype=np.bool_)
 
     for i, path in enumerate(tqdm(image_paths, desc="Processing images")):
         img = cv2.imread(str(path))

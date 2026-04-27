@@ -26,8 +26,8 @@ if __name__ == '__main__':
     BASE_DIR = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/"
     BASE_DIR = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/"
 
-    path_to_grid = os.path.join(BASE_DIR, "data/crossings_points_IRCamM1T20250702_161000M.pkl")
-    output_path = os.path.join(BASE_DIR, "data/points_IRCam.json")
+    path_to_grid = os.path.join(BASE_DIR, "data/crossings_points.pkl")
+    output_path = os.path.join(BASE_DIR, "data/points_WebCam.json")
 
     mirror_ids_list = []
     for row in grid_dict.keys():

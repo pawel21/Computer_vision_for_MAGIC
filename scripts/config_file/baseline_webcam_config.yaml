@@ -1,0 +1,20 @@
+# Baseline feature extraction configuration
+paths:
+  mirror_points: "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/points_WebCam.json"
+  image_glob: "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images/baseline/*.jpg"
+  output_file: "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/baseline/baseline_webcam_features.h5"
+
+extraction:
+  max_images: null  # null = use all available images
+  n_mirrors: 249
+
+features:
+  glcm:
+    enabled: true
+    distances: [1]
+    angles: [0]
+    # names are auto-generated from extractor
+  lbp:
+    enabled: true
+  edge:
+    enabled: true
