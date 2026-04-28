@@ -16,6 +16,8 @@ import cv2
 from skimage.feature import local_binary_pattern, graycomatrix, graycoprops
 from sklearn.decomposition import PCA
 
+from MirrorExtractor.simple_mirror_extractor import SimpleMirrorExtractor
+
 
 class MirrorFeatureExtractor:
     """Extracts features from mirror images"""
@@ -286,3 +288,26 @@ def extract_edge_features(gray_img):
             features[name] = np.nan
 
     return features
+
+def extract_features_for_mirror(
+        img_gray: np.ndarray,
+        mirror_extractor: SimpleMirrorExtractor,
+        mirror_id: int,
+) -> np.ndarray | None:
+    """Extract all featues for a single mirror crop. Return None on failure."""
+    try:
+        crop = mirror_extractor.extract_mirror_gray(img_gray, mirror_id=mirror_id)
+        glcm = extract_glcm_features(crop)
+        lbp = extract_lbp_features(crop)
+        edge = extract_edge_features(crop)
+
+        vec = np.array(
+            [glcm[k] for k in GLCM_KEYS]
+            + [lbp[k] for k in LBP_KEYS]
+            + [edge[k] for k in EDGE_KEYS],
+            dtype=np.float32
+        )
+        return vec
+    except Exception as e:
+        print("Mirror %d extrraction failed: %s", mirror_id, e)
+        return None
