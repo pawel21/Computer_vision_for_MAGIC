@@ -31,6 +31,8 @@ grid_dict["row 17"] = list(range(276, 285)) # [276, 277, ..., 284]
 
 print(grid_dict)
 
+row_sizes = [9, 11, 13, 15, 17, 17, 17, 17, 17, 17, 17, 17, 17, 15, 13, 11, 9]
+
 if '__main__' == __name__:
     BASE_DIR = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/"
 
