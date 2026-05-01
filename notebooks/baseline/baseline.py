@@ -72,7 +72,7 @@ def select_features(
     return features[..., idx], list(keys), idx
 
 def build_vector_baseline(
-    features: np.ndarry,
+    features: np.ndarray,
     keys: Optional[list[str]] = None,
     ) -> VectorBaseline:
     """
@@ -144,3 +144,54 @@ def extract_all_mirrors(img_gray, mirror_extractor) -> np.ndarray:
     for i in range(N_MIRRORS):
         out[i, :] = extract_features_for_mirror(img_gray, mirror_extractor, i)
     return out
+
+def distance_mahalanobis(
+    new_features: np.ndarray,
+    baseline: VectorBaseline,
+) -> np.ndarray:
+    """
+    Mahalanobis dla każdego lustra.
+    
+    new_features: (N_MIRRORS, 11) — pełen wektor z nowego obrazu
+    Returns: (N_MIRRORS,) — dystans per lustro
+    """
+    sub = new_features[:, baseline.feature_idx]  # (n_mirrors, n_feat)
+    diff = sub - baseline.median  # (n_mirrors, n_feat)
+
+    # Wektoryzacja: diff @ cov_inv @ diff.T per lustro
+    # Używamy einsum: 'ij, ijk, ik -> i'
+    d2 = np.einsum('ij,ijk,ik->i', diff, baseline.cov_inv, diff)
+    return np.sqrt(np.maximum(d2, 0))  # zabezpieczenie przed numerycznym <0
+
+
+def distance_euclidean(
+    new_features: np.ndarray,
+    baseline: VectorBaseline,
+    standardize: bool = True,
+) -> np.ndarray:
+    """
+    Euclidean (opcjonalnie po standaryzacji per cecha).
+    """
+    sub = new_features[:, baseline.feature_idx]
+    diff = sub - baseline.median
+    if standardize:
+        diff = diff / baseline.std
+    return np.linalg.norm(diff, axis=1)
+
+
+def distance_cosine(
+    new_features: np.ndarray,
+    baseline: VectorBaseline,
+) -> np.ndarray:
+    """
+    Cosine distance między wektorem cech a medianą baseline'u.
+    """
+    sub = new_features[:, baseline.feature_idx]
+    median = baseline.median
+    
+    dot = np.sum(sub * median, axis=1)
+    norm_sub = np.linalg.norm(sub, axis=1)
+    norm_med = np.linalg.norm(median, axis=1)
+    cos_sim = dot / (norm_sub * norm_med + 1e-12)
+    return 1.0 - cos_sim
+
