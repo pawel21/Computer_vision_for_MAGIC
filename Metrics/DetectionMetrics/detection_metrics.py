@@ -45,3 +45,26 @@ def aggregate_outliers(
         return np.where(votes >= min_votes)[0]
     else:
         raise ValueError(f"Unknown strategy: {strategy}")
+
+def compute_metrics(
+    predicted: np.ndarray,
+    ground_truth: list,
+    n_mirrors: int = 249,
+) -> DetectionMetrics:
+    """Klasyczne P/R/F1/IoU dla detekcji binarnej."""
+    pred_set = set(predicted.tolist())
+    gt_set = set(ground_truth)
+    
+    tp = len(pred_set & gt_set)
+    fp = len(pred_set - gt_set)
+    fn = len(gt_set - pred_set)
+    
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1 = (2 * precision * recall / (precision + recall)
+          if (precision + recall) > 0 else 0.0)
+    
+    union = len(pred_set | gt_set)
+    iou = tp / union if union > 0 else 0.0
+    
+    return DetectionMetrics(tp, fp, fn, precision, recall, f1, iou)
