@@ -289,6 +289,14 @@ def extract_edge_features(gray_img):
 
     return features
 
+# Mapowanie nazwa -> indeks
+GLCM_KEYS = ['glcm_contrast', 'glcm_dissimilarity', 'glcm_homogeneity',
+             'glcm_energy', 'glcm_correlation']
+LBP_KEYS = ['lbp_entropy', 'lbp_uniformity']
+EDGE_KEYS = ['sobel_mean', 'laplacian_mean', 'laplacian_std', 'edge_density']
+ALL_FEATURE_KEYS = GLCM_KEYS + LBP_KEYS + EDGE_KEYS
+N_FEATURES = len(ALL_FEATURE_KEYS)
+
 def extract_features_for_mirror(
         img_gray: np.ndarray,
         mirror_extractor: SimpleMirrorExtractor,
