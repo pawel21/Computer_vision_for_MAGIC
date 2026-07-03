@@ -45,23 +45,27 @@ ALL_FEATURE_KEYS = GLCM_KEYS + LBP_KEYS + EDGE_KEYS
 
 FEATURE_IDX = {k: i for i, k in enumerate(ALL_FEATURE_KEYS)}
 
-features = get_features_array(BASELINE_FILE_UBUNTU)
+features = get_features_array(BASELINE_FILE_WSL)
 baseline = build_vector_baseline(features)
 
 img_path = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images/image_2024-05-04_1700.jpg"
 img_path = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images/image_2024-05-15_1800.jpg"
 img_path = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images/image_2024-05-11_1700.jpg"
 img_path = "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images/image_2024-05-12_1000.jpg"
-#img_path = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/data/webcam_img/image_2023-04-23_1400.jpg"
+img_path = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/data/webcam_img/image_2023-04-23_1400.jpg"
+img_path = "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/data/webcam_img/image_2024-05-11_1500.jpg"
 
 img = cv2.imread(str(img_path))
 img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-mirror_extractor = SimpleMirrorExtractor("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/points_WebCam.json")
+#mirror_extractor = SimpleMirrorExtractor("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/points_WebCam.json")
+mirror_extractor = SimpleMirrorExtractor("/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/calibration/points_WebCam.json")
 
-# 2. Ekstrakcja z nowego obrazu
+#  Ekstrakcja z nowego obrazu
 new_features = extract_all_mirrors(img_gray, mirror_extractor)  # (249, 11)
+
+
 
 fig, ax = plt.subplots(3, 4, figsize=(12, 12))
 
@@ -79,5 +83,18 @@ for i, key in enumerate(list(FEATURE_IDX.keys())):
     axes[i].set_yticks([])
     axes[i].set_title(key)
     add_polygon_on_img(axes[i], p_list, "red")
-axes[11].axis('off')
+
+# Liczymy odległość — score per lustro
+scores_maha = distance_mahalanobis(new_features, baseline)
+threshold_maha = np.mean(scores_maha) + 3*np.std(scores_maha)
+print(threshold_maha)
+outliers_maha = np.where(scores_maha > threshold_maha)[0]
+print(outliers_maha)
+p_list_maha = []
+for m_id in outliers_maha:
+    p_list_maha.append(mirror_extractor.get_point_coords(m_id))
+axes[11].imshow(img_rgb)
+add_polygon_on_img(axes[11], p_list_maha, "red")
+
+# axes[11].axis('off')
 plt.show()
