@@ -1,0 +1,5 @@
+paths:
+  baseline: "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/baseline/baseline_webcam_features.h5"
+  img_path_list: ["/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/data/webcam_img/image_2023-04-23_1400.jpg",
+             "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/data/webcam_img/image_2023-04-23_1400.jpg"]
+  calib: "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/calibration/points_WebCam.json"
