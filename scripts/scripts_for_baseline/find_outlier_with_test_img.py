@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import json
 from pathlib import Path
 
 import cv2
@@ -16,15 +17,16 @@ from MirrorExtractor.baseline import (
     distance_mahalanobis,
     extract_all_mirrors
 )
+from DetectionMetrics.detection_metrics import DetectionMetrics, compute_metrics
 
 from vis_tools import mark_mirrors_on_img, add_polygon_on_img
-
 from utils import load_config, get_features_array
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 DEFAULT_OUTPUT_DIR = Path("output")
+WEBCAM_OUTPUT_DIR = Path("")
 OUTLIER_THRESHOLD_STD = 3.0
 
 def parse_args() -> argparse.Namespace:
@@ -45,11 +47,11 @@ def find_outliers(scores: np.ndarray, n_std: float = OUTLIER_THRESHOLD_STD) -> n
     threshold = float(np.mean(scores) + n_std * np.std(scores))
     return np.where(scores > threshold)[0]
 
-
 def process_image(
         img_path: Path,
         mirror_extractor: SimpleMirrorExtractor,
         baseline,
+        ground_truth_mirror_id,
         output_dir: Path,
 ) -> None:
     """Wykrywa lusterka odstające na pojedynczym obrazie i zapisuje wizualizację."""
@@ -64,20 +66,21 @@ def process_image(
     new_features = extract_all_mirrors(img_gray, mirror_extractor)
     scores_maha = distance_mahalanobis(new_features, baseline)
     outliers_maha = find_outliers(scores_maha)
-
+    print(outliers_maha)
     logger.info(
-        "%s: liczba lusterek odstających = %d (%s)",
+        "%s: Predict number of outlier mirrors = %d (%s)",
         img_path.name,
         len(outliers_maha),
         outliers_maha.tolist(),
     )
 
     points = [mirror_extractor.get_point_coords(mirror_id) for mirror_id in outliers_maha]
-
+    points_grouth_true = [mirror_extractor.get_point_coords(mirror_id) for mirror_id in ground_truth_mirror_id]
     fig, ax = plt.subplots(2, 1, figsize=(12, 8))
     ax[0].imshow(img_rgb)
     ax[1].imshow(img_rgb)
     add_polygon_on_img(ax[1], points, "red")
+    add_polygon_on_img(ax[1], points_grouth_true, "green")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     out_path = output_dir / f"checked_{img_path.name}"
@@ -86,6 +89,7 @@ def process_image(
 
     logger.info("Zapisano wynik: %s", out_path)
 
+    return outliers_maha
 
 def main() -> None:
     args = parse_args()
@@ -93,16 +97,24 @@ def main() -> None:
 
     baseline_file = cfg["paths"]["baseline"]
     calib_file = cfg["paths"]["calib"]
-    img_path_list = [Path(p) for p in cfg["paths"]["img_path_list"]]
+    webcam_img_dir = Path(cfg["paths"]["img_path_dir"])
+    json_path = cfg["paths"]["test_img"]
+    with open(json_path, "r") as f:
+        dict_test_img_list = json.load(f)
 
     features = get_features_array(baseline_file)
     baseline = build_vector_baseline(features)
     mirror_extractor = SimpleMirrorExtractor(calib_file)
 
-    for img_path in img_path_list:
-        logger.info("Przetwarzanie obrazu: %s", img_path)
-        process_image(img_path, mirror_extractor, baseline, args.output_dir)
-
+    for d in dict_test_img_list:
+        img_path = webcam_img_dir / d["file"]
+        ground_truth = d["marked_mirrors"]
+        logger.info("Ścieżka: %s", img_path)
+        if img_path.exists():
+            logger.info("Przetwarzanie obrazu: %s", img_path)
+            pred = process_image(img_path, mirror_extractor, baseline, ground_truth, args.output_dir)
+            metrics = compute_metrics(pred, ground_truth)
+            print(f"Result:        {metrics.summary}")
 
 if __name__ == "__main__":
     main()
