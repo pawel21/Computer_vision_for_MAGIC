@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_OUTPUT_DIR = Path("output")
 WEBCAM_OUTPUT_DIR = Path("")
-OUTLIER_THRESHOLD_STD = 3.0
+OUTLIER_THRESHOLD_STD = 3.5
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -105,7 +105,9 @@ def main() -> None:
     features = get_features_array(baseline_file)
     baseline = build_vector_baseline(features)
     mirror_extractor = SimpleMirrorExtractor(calib_file)
-
+    tp_sum = 0
+    fp_sum = 0
+    fn_sum = 0
     for d in dict_test_img_list:
         img_path = webcam_img_dir / d["file"]
         ground_truth = d["marked_mirrors"]
@@ -115,6 +117,17 @@ def main() -> None:
             pred = process_image(img_path, mirror_extractor, baseline, ground_truth, args.output_dir)
             metrics = compute_metrics(pred, ground_truth)
             print(f"Result:        {metrics.summary}")
+            tp_sum += metrics.tp
+            fp_sum += metrics.fp
+            fn_sum += metrics.fn
+
+    precision = tp_sum / (tp_sum + fp_sum)
+    recall = tp_sum / (tp_sum + fn_sum)
+    logger.info(f"True positive: %d: {tp_sum}")
+    logger.info(f"False positive: %d: {fp_sum}")
+    logger.info(f"False negative: %d: {fn_sum}")
+    logger.info("Summary precision: %.3f", precision)
+    logger.info("Summary recall: %.3f", recall)
 
 if __name__ == "__main__":
     main()

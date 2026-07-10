@@ -1,0 +1,5 @@
+paths:
+  baseline: "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/baseline/baseline_webcam_features.h5"
+  img_path_dir: "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images"
+  calib: "/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/points_WebCam.json"
+  test_img: "/media/pgliwny/ADATA HD3303/Computer_vision_for_MAGIC/data/img_with_annomarly.json"
