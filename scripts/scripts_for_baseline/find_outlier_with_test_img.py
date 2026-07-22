@@ -12,7 +12,7 @@ import numpy as np
 
 from MirrorExtractor.simple_mirror_extractor import SimpleMirrorExtractor
 
-from MirrorExtractor.baseline import (
+from MirrorFeatureExtractor.baseline import (
     build_vector_baseline,
     distance_mahalanobis,
     extract_all_mirrors
