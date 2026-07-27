@@ -1,0 +1,16 @@
+# Przykladowa konfiguracja dla download_magic_webcam.py
+# Uzycie: python download_magic_webcam.py --config example_config.yaml
+
+start_date: "2024-04-01"      # wymagane, YYYY-MM-DD
+end_date: "2024-04-10"        # opcjonalne, domyslnie = start_date
+start_time: "08:00"           # opcjonalne, HH:MM lub HHMM, domyslnie 00:00
+end_time: "18:00"             # opcjonalne, domyslnie 23:50
+interval_min: 10              # odstep miedzy klatkami w minutach
+camera: webcam2               # nazwa kamery
+output_dir: /home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024             # wymagane, katalog docelowy (plaski, bez podkatalogow)
+timeout: 15.0                 # timeout pojedynczego requestu (s)
+retries: 2                    # liczba prob przy bledzie
+overwrite: false              # nadpisac istniejace pliki?
+verify_ssl: true               # false = wylacz weryfikacje certyfikatu SSL (przy self-signed cert serwera)
+ca_bundle: null                # opcjonalnie: sciezka do wlasnego pliku CA (PEM), ma pierwszenstwo nad verify_ssl
+
