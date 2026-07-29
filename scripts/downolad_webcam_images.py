@@ -25,6 +25,8 @@ Przykladowy config.yaml:
     ca_bundle: null
 
 Wymaga: pip install requests pyyaml
+
+Run: python downolad_webcam_images.py --config config_file/config_download_webcam.yaml --insecure
 """
 
 import argparse
