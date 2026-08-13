@@ -7,7 +7,6 @@ import os
 import json
 from PIL import Image, ImageDraw
 from tqdm import tqdm
-from typing import List
 import cv2
 from pathlib import Path
 from scipy.ndimage import sobel, laplace, binary_erosion, binary_fill_holes, label, distance_transform_edt
@@ -46,13 +45,11 @@ def build_mask(gray, thr=0):
 def extract_photometric(gray, m):
     v = gray[m].astype(np.float64)
     med = np.median(v)
-    mad = np.median(np.abs(v - med))
-    p05, p25, p75, p95 = np.percentile(v, [5, 25, 75, 95])
+    p25, p75 = np.percentile(v, [25, 75])
     return {
         'median': med,
         'cov': v.std() / (v.mean() + 1e-8),
-        'iqr_norm': (p75 - p25) / (med + 1e-8),
-       # 'sat_frac': float((v >= 250).mean()),  # FLAGA, nie cecha
+        'iqr_norm': (p75 - p25) / (med + 1e-8)
     }
 
 def new_extract_edge_features(gray_img, mask):
@@ -96,20 +93,6 @@ def proces_one_img(path, mirror_extractor):
 
 
 
-def mahalanobis_lw(X):
-    mu = np.median(X, axis=0)
-    Z = (X - mu).reshape(-1, len(COLS))
-    lw = LedoitWolf().fit(Z)
-    return lw.mahalanobis(Z)
-
-def d2_of(Xset, mu, lw):
-    """Xset (N,249,5) -> d2 (N,249)"""
-    Zr = robust_z(Xset, axis=1) - mu
-    out = np.full(Zr.shape[:2], np.nan)
-    g = np.isfinite(Zr).all(axis=2)
-    out[g] = lw.mahalanobis(Zr[g])
-    return out
-
 def robust_z(x, axis, min_scale=1e-8):
     med = np.nanmedian(x, axis=axis, keepdims=True)
     mad = np.nanmedian(np.abs(x - med), axis=axis, keepdims=True)
@@ -120,11 +103,11 @@ def robust_z(x, axis, min_scale=1e-8):
 if __name__ == '__main__':
     print("Start")
 
-   # mirror_extractor = SimpleMirrorExtractor("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/points_WebCam.json")
-    mirror_extractor = SimpleMirrorExtractor(
-        "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/calibration/points_WebCam.json")
-   # img_paths = Path("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images")
-    img_paths = Path("/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/good")
+    mirror_extractor = SimpleMirrorExtractor("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/points_WebCam.json")
+    #mirror_extractor = SimpleMirrorExtractor(
+    #    "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/calibration/points_WebCam.json")
+    img_paths = Path("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images")
+    #img_paths = Path("/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/good")
     img_path_list = sorted(img_paths.glob("*.jpg"))
     print(len(img_path_list))
 
@@ -139,23 +122,20 @@ if __name__ == '__main__':
     # trening
     R_tr = robust_z(X, axis=1)                  # (N, 249, 5), po lustrach w klatce
     mu = np.nanmedian(R_tr, axis=0)             # (249, 5), baseline czasowy per lustro
-    Z_tr = (X - mu).reshape(-1, len(COLS))
+    Z_tr = (R_tr - mu).reshape(-1, len(COLS))
 
     ok = ~np.isnan(Z_tr).any(axis=1)  # LedoitWolf nie obsługuje NaN
     lw = LedoitWolf().fit(Z_tr[ok])
 
-   # img_path = Path("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images/image_2023-01-01_1200.jpg")
-    img_path = Path(
-        "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/good/20240401_0820_la.jpg")
+    img_path = Path("/media/pgliwny/ADATA HD3303/Computer_Vision_system/data/MAGIC/webcam_useful_images/image_2023-01-01_1200.jpg")
+   # img_path = Path(
+   #     "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/good/20240401_0820_la.jpg")
 
     X_new = proces_one_img(img_path, mirror_extractor)
     R_new = robust_z(X_new[None, ...], axis=1)[0]
-    Z_new = X_new - mu
+    Z_new = R_new - mu
     d2 = lw.mahalanobis(Z_new)
 
 
     print(np.where(d2 > 5))
-
-
-
 
