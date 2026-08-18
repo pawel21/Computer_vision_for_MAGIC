@@ -1,0 +1,7 @@
+paths:
+  img_path_dir: "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/good/"
+  calib: "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/calibration/points_WebCam.json"
+output:
+  baseline_file: "/home/pgliwny/Praca/Computer_vision_for_MAGIC/scripts/scripts_for_baseline/output/out_baseline_webcam.npz"
+parameters:
+  number_of_image_to_process: 100
