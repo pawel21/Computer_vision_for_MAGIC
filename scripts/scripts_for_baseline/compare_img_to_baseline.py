@@ -18,6 +18,8 @@ from utils import load_config, proces_one_img, robust_z
 
 from MirrorExtractor.simple_mirror_extractor import SimpleMirrorExtractor
 
+from DetectionMetrics.detection_metrics import DetectionMetrics, compute_metrics
+
 COLS = ['median', 'cov', 'iqr_norm', 'laplacian_std', 'edge_density']
 
 MY_THRESHOLD = 15
@@ -42,7 +44,6 @@ def mark_mirrors_on_img(img_path, points_list, color):
         ax.add_patch(polygon)
 
     plt.tight_layout()
-    plt.show()
 
 
 logging.basicConfig(
@@ -69,7 +70,9 @@ if __name__ == '__main__':
 
 
     img_path = Path(
-         "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/05/good/20240507_1140_la.jpg")
+         "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/05/good/20240506_1220_la.jpg")
+    img_path = Path(
+        "/home/pgliwny/Praca/Computer_vision_for_MAGIC/data/webcam/2024/05/good/20240501_1020_la.jpg")
     mirror_extractor = SimpleMirrorExtractor(CALIB_FILE)
 
     X_new = proces_one_img(img_path, mirror_extractor)
@@ -91,11 +94,31 @@ if __name__ == '__main__':
 
     d2 = lw.mahalanobis(Z_new)
     score = d2 / b["d2_med"]
-    outliers_mirrors = np.where(score > b["threshold"])[0]
+    outliers_mirrors = np.where(score > 3*b["threshold"])[0]
 
     points = [mirror_extractor.get_point_coords(m_id) for m_id in outliers_mirrors]
 
     mark_mirrors_on_img(img_path, points, "red")
+
+    ground_truth = [
+        119,
+        121,
+        135,
+        152,
+        176,
+        189,
+        190,
+        191,
+        192,
+        193,
+        204,
+        209
+    ]
+
+    metrics = compute_metrics(outliers_mirrors, ground_truth)
+    print(f"Result:        {metrics.summary}")
+
+    plt.show()
 
 
 

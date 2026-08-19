@@ -45,7 +45,7 @@ def main():
     ok = ~np.isnan(Z_tr).any(axis=1)  # LedoitWolf nie obsługuje NaN
     lw = LedoitWolf().fit(Z_tr[ok])
 
-    N_CAL = 20
+    N_CAL = 30
     # --- kalibracja na osobnych klatkach ---
     X_cal = np.zeros((N_CAL, 249, len(COLS)))
     for i, path in enumerate(img_path_list[N_IMG:N_IMG + N_CAL]):
@@ -58,6 +58,8 @@ def main():
     d2_med = np.where(d2_med < 1e-6, np.nan, d2_med)
 
     ratio = d2_cal / d2_med  # znormalizowane, porównywalne między lustrami
+    print("kwantyl 99.5 per lustro – rozrzut:",
+          np.nanpercentile(ratio, 99.5, axis=0).round(1)[:20])
     thr = np.nanpercentile(ratio, 99.5)
 
     logger.info(f"próg empiryczny: {thr:.2f}   (chi2 99%: 15.1 na surowym d2)")
