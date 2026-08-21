@@ -1,15 +1,17 @@
 import numpy as np
-
+import cv2
 from dataclasses import dataclass, field
 from typing import Optional
 from scipy.spatial.distance import mahalanobis
 
 import numpy as np
 from collections import defaultdict
-
+import logging
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection, LineCollection
+
+from scipy.ndimage import sobel, laplace, binary_erosion, binary_fill_holes, label, distance_transform_edt
 
 from MirrorFeatureExtractor.mirror_feature_extractor import (
     extract_glcm_features,
@@ -20,6 +22,89 @@ from MirrorFeatureExtractor.mirror_feature_extractor import (
 
 from MirrorExtractor.simple_mirror_extractor import SimpleMirrorExtractor
 
+
+def load_gray(img_path):
+    img = cv2.imread(str(img_path))
+    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+def build_mask(gray, thr=0):
+    m = gray > thr
+    m = binary_fill_holes(m)  # ciemny piksel wewnątrz lustra wraca
+    lab, n = label(m)
+    if n > 1:  # zostaw największy spójny obszar
+        sizes = np.bincount(lab.ravel());
+        sizes[0] = 0
+        m = lab == sizes.argmax()
+    return m
+
+def extract_photometric(gray, m):
+    v = gray[m].astype(np.float64)
+    med = np.median(v)
+    p25, p75 = np.percentile(v, [25, 75])
+    return {
+        'median': med,
+        'cov': v.std() / (v.mean() + 1e-8),
+        'iqr_norm': (p75 - p25) / (med + 1e-8)
+    }
+
+
+def new_extract_edge_features(gray_img, mask):
+    names = ['laplacian_std', 'edge_density']
+    features = {n: np.nan for n in names}
+
+    try:
+        core = binary_erosion(mask, np.ones((3, 3), bool))
+        if core.sum() < 10:
+            return features
+
+        # Canny: gauss + histereza sięgają dalej niż 1 piksel -> większy margines.
+        core_canny = binary_erosion(mask, np.ones((7, 7), bool))
+
+        # Replace background with the nearest in-mask value: no artificial step.
+        idx = distance_transform_edt(~mask, return_distances=False, return_indices=True)
+        g = gray_img[tuple(idx)].astype(np.float64)
+        sx, sy = sobel(g, axis=1), sobel(g, axis=0)
+
+        lap = np.abs(laplace(g))
+        features['laplacian_std'] = float(lap[core].std())
+
+        # Progi Canny'ego względne, nie 50/150 — inaczej jaśniejsze niebo
+        # samo z siebie daje więcej krawędzi przy tej samej strukturze lustra.
+        # L1, bo cv2.Canny domyślnie używa L1 (L2gradient=False).
+        grad_l1 = np.abs(sx) + np.abs(sy)
+        hi = float(np.percentile(grad_l1[core], 90))
+        hi = max(hi, 10.0)  # płaski patch -> nie zjeżdżaj do zera
+        lo = 0.4 * hi
+        edges = cv2.Canny(g.astype(np.uint8), lo, hi)
+        features['edge_density'] = (edges[core_canny] > 0).sum() / core_canny.sum()
+
+    except Exception as e:
+        logging.warning(f"Edge feature extraction failed: {e}")
+
+    return features
+
+def proces_one_img(path, mirror_extractor):
+    img_gray = load_gray(path)
+    ph_array = np.zeros((249, 3))
+    edge_array = np.zeros((249, 2))
+    for m_id in range(249):
+        m_gray = mirror_extractor.extract_mirror_gray(img_gray, mirror_id=m_id)
+        mask = build_mask(m_gray)
+        ph_dict = extract_photometric(m_gray, mask)
+        ph_array[m_id, :] = list(ph_dict.values())
+        edge_dict = new_extract_edge_features(m_gray, mask)
+        edge_array[m_id, :] = list(edge_dict.values())
+    feat_array = np.concatenate((ph_array, edge_array), axis=1)
+    return feat_array
+
+def robust_z(x, axis, min_scale=1e-8):
+    med = np.nanmedian(x, axis=axis, keepdims=True)
+    mad = np.nanmedian(np.abs(x - med), axis=axis, keepdims=True)
+    scale = 1.4826 * mad
+    scale = np.where(scale < min_scale, np.inf, scale)  # brak zmienności -> z = 0
+    return (x - med) / scale
+
+# OLD CODE
 FEATURE_REGISTRY = {
     "glcm": extract_glcm_features,
     "lbp": extract_lbp_features,

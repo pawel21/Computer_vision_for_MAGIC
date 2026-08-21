@@ -5,9 +5,16 @@ from pathlib import Path
 from sklearn.covariance import LedoitWolf
 from tqdm import tqdm
 
-from utils import load_config, proces_one_img, robust_z
+from MirrorFeatureExtractor.baseline import (
+    extract_photometric,
+    new_extract_edge_features,
+    proces_one_img,
+    robust_z
+)
 
 from MirrorExtractor.simple_mirror_extractor import SimpleMirrorExtractor
+
+from utils import load_config
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)

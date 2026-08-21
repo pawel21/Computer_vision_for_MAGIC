@@ -14,7 +14,14 @@ from scipy.ndimage import sobel, laplace, binary_erosion, binary_fill_holes, lab
 
 from sklearn.covariance import LedoitWolf
 
-from utils import load_config, proces_one_img, robust_z
+from utils import load_config
+
+from MirrorFeatureExtractor.baseline import (
+    extract_photometric,
+    new_extract_edge_features,
+    proces_one_img,
+    robust_z
+)
 
 from MirrorExtractor.simple_mirror_extractor import SimpleMirrorExtractor
 
