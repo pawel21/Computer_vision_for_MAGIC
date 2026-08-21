@@ -22,6 +22,8 @@ from MirrorFeatureExtractor.mirror_feature_extractor import (
 
 from MirrorExtractor.simple_mirror_extractor import SimpleMirrorExtractor
 
+N_MIRROR = 249
+
 
 def load_gray(img_path):
     img = cv2.imread(str(img_path))
@@ -49,7 +51,7 @@ def extract_photometric(gray, m):
 
 
 def new_extract_edge_features(gray_img, mask):
-    names = ['laplacian_std', 'edge_density']
+    names = ['sobel_mean', 'laplacian_std', 'edge_density']
     features = {n: np.nan for n in names}
 
     try:
@@ -63,7 +65,9 @@ def new_extract_edge_features(gray_img, mask):
         # Replace background with the nearest in-mask value: no artificial step.
         idx = distance_transform_edt(~mask, return_distances=False, return_indices=True)
         g = gray_img[tuple(idx)].astype(np.float64)
+
         sx, sy = sobel(g, axis=1), sobel(g, axis=0)
+        features['sobel_mean'] = np.sqrt(sx ** 2 + sy ** 2)[core].mean()
 
         lap = np.abs(laplace(g))
         features['laplacian_std'] = float(lap[core].std())
@@ -85,9 +89,9 @@ def new_extract_edge_features(gray_img, mask):
 
 def proces_one_img(path, mirror_extractor):
     img_gray = load_gray(path)
-    ph_array = np.zeros((249, 3))
-    edge_array = np.zeros((249, 2))
-    for m_id in range(249):
+    ph_array = np.zeros((N_MIRROR, 3))
+    edge_array = np.zeros((N_MIRROR, 3))
+    for m_id in range(N_MIRROR):
         m_gray = mirror_extractor.extract_mirror_gray(img_gray, mirror_id=m_id)
         mask = build_mask(m_gray)
         ph_dict = extract_photometric(m_gray, mask)

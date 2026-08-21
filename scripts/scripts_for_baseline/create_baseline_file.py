@@ -19,9 +19,11 @@ from utils import load_config
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-COLS = ['median', 'cov', 'iqr_norm', 'laplacian_std', 'edge_density']
+COLS = ['median', 'cov', 'iqr_norm', 'sobel_mean', 'laplacian_std', 'edge_density']
 
-def main():
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Script for create baseline file')
     parser.add_argument("--config", required=True, help="Configuration file")
     args = parser.parse_args()
@@ -35,10 +37,9 @@ def main():
     logger.info(f"Img path dir: {img_path_dir}")
     logger.info(f"Number of images to process: {N_IMG}")
 
-
     img_path_list = sorted(img_path_dir.glob("*.jpg"))
     mirror_extractor = SimpleMirrorExtractor(CALIB_FILE)
-    X = np.zeros((N_IMG, 249, 5))
+    X = np.zeros((N_IMG, 249, len(COLS)))
     for i, path in enumerate(img_path_list[:N_IMG]):
         logger.info("Przetwarzanie obrazu: %s", path)
         feat_array = proces_one_img(path, mirror_extractor)
@@ -52,7 +53,7 @@ def main():
     ok = ~np.isnan(Z_tr).any(axis=1)  # LedoitWolf nie obsługuje NaN
     lw = LedoitWolf().fit(Z_tr[ok])
 
-    N_CAL = 30
+    N_CAL = 70
     # --- kalibracja na osobnych klatkach ---
     X_cal = np.zeros((N_CAL, 249, len(COLS)))
     for i, path in enumerate(img_path_list[N_IMG:N_IMG + N_CAL]):
@@ -67,13 +68,11 @@ def main():
     ratio = d2_cal / d2_med  # znormalizowane, porównywalne między lustrami
     print("kwantyl 99.5 per lustro – rozrzut:",
           np.nanpercentile(ratio, 99.5, axis=0).round(1)[:20])
-    thr = np.nanpercentile(ratio, 99.5)
+    med_r = np.nanmedian(ratio, axis=0)
+    mad_r = np.nanmedian(np.abs(ratio - med_r), axis=0)
+    thr_per_mirror = med_r + 6.0 * 1.4826 * mad_r
 
-    logger.info(f"próg empiryczny: {thr:.2f}   (chi2 99%: 15.1 na surowym d2)")
 
     np.savez(BASELINE_OUT_FILE, mu=mu, covariance=lw.covariance_, location=lw.location_,
-             d2_med=d2_med, threshold=thr, cols=np.array(COLS),
+             d2_med=d2_med, threshold=thr_per_mirror, cols=np.array(COLS),
              n_frames=N_IMG, n_calib=N_CAL, n_used=ok.sum())
-
-if __name__ == "__main__":
-    main()
