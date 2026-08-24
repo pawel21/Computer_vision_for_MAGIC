@@ -81,10 +81,8 @@ def new_extract_edge_features(gray_img, mask):
         lo = 0.4 * hi
         edges = cv2.Canny(g.astype(np.uint8), lo, hi)
         features['edge_density'] = (edges[core_canny] > 0).sum() / core_canny.sum()
-
     except Exception as e:
         logging.warning(f"Edge feature extraction failed: {e}")
-
     return features
 
 def proces_one_img(path, mirror_extractor):
@@ -107,6 +105,22 @@ def robust_z(x, axis, min_scale=1e-8):
     scale = 1.4826 * mad
     scale = np.where(scale < min_scale, np.inf, scale)  # brak zmienności -> z = 0
     return (x - med) / scale
+
+features_to_test = {
+    'photometric': extract_photometric(),
+    "edge": extract_edge_features(),
+
+}
+def calc_features(path, mirror_extractor):
+    img_gray = load_gray(path)
+    img_gray = load_gray(path)
+    ph_array = np.zeros((N_MIRROR, 3))
+    edge_array = np.zeros((N_MIRROR, 3))
+    for m_id in range(N_MIRROR):
+        m_gray = mirror_extractor.extract_mirror_gray(img_gray, mirror_id=m_id)
+        mask = build_mask(m_gray)
+        ph_dict = extract_photometric(m_gray, mask)
+        ph_array[m_id, :] = list(ph_dict.values())
 
 # OLD CODE
 FEATURE_REGISTRY = {
